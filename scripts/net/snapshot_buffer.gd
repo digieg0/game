@@ -4,11 +4,11 @@ extends RefCounted
 const MAX_AGE: float = 2.0
 var entries: Dictionary = {}
 
-func push(player_id: int, t: float, pos: Vector3, yaw: float, pitch: float, alive: bool, hp: float = 100.0) -> void:
+func push(player_id: int, t: float, pos: Vector3, yaw: float, pitch: float, alive: bool, hp: float = 100.0, crouch: float = 1.0) -> void:
 	if not entries.has(player_id):
 		entries[player_id] = []
 	var frames: Array = entries[player_id]
-	frames.append({"t": t, "pos": pos, "yaw": yaw, "pitch": pitch, "alive": alive, "hp": hp})
+	frames.append({"t": t, "pos": pos, "yaw": yaw, "pitch": pitch, "alive": alive, "hp": hp, "crouch": crouch})
 	var cutoff: float = t - MAX_AGE
 	while frames.size() > 0 and float(frames[0]["t"]) < cutoff:
 		frames.pop_front()
@@ -34,6 +34,7 @@ func sample(player_id: int, t: float) -> Variant:
 				"pitch": lerpf(float(a["pitch"]), float(b["pitch"]), weight),
 				"alive": bool(a["alive"]) if weight < 0.5 else bool(b["alive"]),
 				"hp": lerpf(float(a.get("hp", 100.0)), float(b.get("hp", 100.0)), weight),
+				"crouch": lerpf(float(a.get("crouch", 1.0)), float(b.get("crouch", 1.0)), weight),
 			}
 	return frames[frames.size() - 1]
 

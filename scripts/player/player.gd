@@ -8,6 +8,10 @@ const UNIT := 0.0254
 const FIRE_RATE: float = 0.12
 const MAX_HP: float = 100.0
 const MOUSE_SENS: float = 0.0025
+const STAND_CAPSULE_HEIGHT: float = 1.8
+const CROUCH_SCALE: float = 0.72      # во сколько раз приседает модель/хитбоксы
+const CROUCH_TIME: float = 0.18       # время приседания/вставания, сек
+const EYE_HEIGHT_STAND: float = 1.58
 
 var player_id: int = 0
 var player_name: String = "Player"
@@ -33,6 +37,7 @@ var ground_ticks := 0            # сколько тиков подряд на �
 var jump_takeoff_ticks := 0      # state ground_ticks на взлёте (для отладки bhop)
 var jump_buffer := 0
 var last_want_jump := false      # что отправляется на сервер в этот тик
+var crouch_amount: float = 1.0   # 1.0 = стоит, CROUCH_SCALE = присед
 
 var _fire_cooldown: float = 0.0
 var _tick_counter: int = 0
@@ -46,10 +51,17 @@ var _last_server_tick: int = -1
 @onready var spring_arm: SpringArm3D = $CameraPivot/SpringArm3D
 @onready var model: Node3D = $Model
 @onready var viewmodel: Node3D = $CameraPivot/SpringArm3D/Camera3D/VMRoot
+@onready var collision_shape: CollisionShape3D = $CollisionShape3D
+var _capsule: CapsuleShape3D
 
 func _ready() -> void:
 	params = MovementSettings.params
 	_apply_floor_params()
+	# Shape в .tscn — общий ресурс; каждый игрок получает свою копию капсулы,
+	# иначе присед одного игрока менял бы коллизию всем.
+	if collision_shape != null and collision_shape.shape is CapsuleShape3D:
+		_capsule = collision_shape.shape.duplicate()
+		collision_shape.shape = _capsule
 	if is_local:
 		camera.current = true
 		_apply_view_mode()
@@ -206,6 +218,25 @@ func _movement_step(delta: float, input: Vector2, walking: bool, crouching: bool
 	if not on_ground:
 		vel.y -= params.gravity * delta * 0.5
 
+	_update_crouch_pose(delta, crouching)
+
+## Присед: капсула/камера/модель плавно сжимаются, хитбоксы сжимаются вместе с моделью.
+func _update_crouch_pose(delta: float, crouching: bool) -> void:
+	var target: float = CROUCH_SCALE if crouching else 1.0
+	var rate: float = (1.0 - CROUCH_SCALE) / CROUCH_TIME
+	crouch_amount = move_toward(crouch_amount, target, rate * delta)
+	_apply_pose(crouch_amount)
+
+func _apply_pose(amount: float) -> void:
+	amount = clampf(amount, minf(CROUCH_SCALE, 1.0), maxf(CROUCH_SCALE, 1.0))
+	if _capsule != null:
+		_capsule.height = STAND_CAPSULE_HEIGHT * amount
+		collision_shape.position = Vector3(0.0, 0.9 * amount, 0.0)
+	if model != null:
+		model.scale = Vector3(1.0, amount, 1.0)
+	if is_local and camera_pivot != null:
+		camera_pivot.position.y = EYE_HEIGHT_STAND * amount
+
 func _flush_input_to_server() -> void:
 	_tick_counter += 1
 	var movement := _get_move_input(Input.mouse_mode == Input.MOUSE_MODE_CAPTURED)
@@ -274,7 +305,17 @@ func _handle_shoot(delta: float) -> void:
 		_fire_once()
 
 func _fire_once() -> void:
-	NetManager.request_fire(aim_yaw, aim_pitch)
+	var yaw: float = aim_yaw
+	var pitch: float = aim_pitch
+	# Silent Aim: углы выстрела подменяются в сторону цели; камера/прицел не крутится,
+	# сервер считает попадание по отправленным углам (как и в обычной стрельбе).
+	var silent = CheatRegistry.get_cheat("silent_aim")
+	if silent != null and silent.enabled:
+		var shot_angles: Dictionary = silent.get_shot_angles(self)
+		if not shot_angles.is_empty():
+			yaw = float(shot_angles.get("yaw", aim_yaw))
+			pitch = float(shot_angles.get("pitch", aim_pitch))
+	NetManager.request_fire(yaw, pitch)
 
 func get_visible_yaw() -> float:
 	if is_local:
@@ -306,6 +347,8 @@ func respawn(spawn_pos: Vector3) -> void:
 	on_ground = false
 	ground_ticks = 0
 	jump_buffer = 0
+	crouch_amount = 1.0
+	_apply_pose(1.0)
 	visible = true
 	_server_input_queue.clear()
 	_server_input_idle = 999.0

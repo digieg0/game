@@ -15,6 +15,7 @@ var CHEAT_PATHS: Array[String] = [
 	"res://scripts/cheats/fake_lag.gd",
 	"res://scripts/cheats/ragebot.gd",
 	"res://scripts/cheats/resolver.gd",
+	"res://scripts/cheats/silent_aim.gd",
 	"res://scripts/cheats/spinbot.gd",
 	"res://scripts/cheats/triggerbot.gd",
 ]

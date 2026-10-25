@@ -83,8 +83,10 @@ func _apply_snapshots() -> void:
         player.visible = player.alive
         if was_alive != player.alive:
             player.set_hitboxes_enabled(player.alive)
+        player.crouch_amount = clampf(float(state.get("crouch", 1.0)), float(player.CROUCH_SCALE), 1.0)
         if player.model and player.model.has_method("set_server_pose"):
             player.model.set_server_pose(player.visible_yaw, player.visible_pitch)
+        player._apply_pose(player.crouch_amount)
 
 func _on_respawn(id: int, pos: Vector3) -> void:
     var player: Node = local_players.get(id)

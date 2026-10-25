@@ -116,15 +116,8 @@ func _on_backdrop_input(event: InputEvent) -> void:
         _set_open(false)
 
 const MOVEMENT_CONTROLS: Array = [
-    {"name": "autobhop", "type": "bool"},
-    {"name": "enable_bhop", "type": "bool"},
-    {"name": "gravity", "type": "float", "min": 100.0, "max": 1600.0},
-    {"name": "accelerate", "type": "float", "min": 1.0, "max": 20.0},
-    {"name": "air_accelerate", "type": "float", "min": 1.0, "max": 200.0},
-    {"name": "air_wishspeed_cap", "type": "float", "min": 1.0, "max": 500.0},
-    {"name": "friction", "type": "float", "min": 0.0, "max": 15.0},
-    {"name": "weapon_max_speed", "type": "float", "min": 100.0, "max": 1000.0},
-    {"name": "jump_height", "type": "float", "min": 10.0, "max": 300.0},
+    {"name": "enable_bhop", "label": "Enable Bhop — прыжки без потолка скорости"},
+    {"name": "autobhop", "label": "Autobhop — прыжок по удержанию Space"},
 ]
 
 func _build_cheat_tab(parent: VBoxContainer, category: String) -> void:
@@ -208,66 +201,25 @@ func _build_movement_section(parent: VBoxContainer) -> void:
     name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     title_row.add_child(name_label)
     var description := Label.new()
-    description.text = "Меняет MovementParams в рантайме. Физика только читает."
+    description.text = "Мувмент фиксирован (честные дефолты CS2). Тут только вкл/выкл."
     description.add_theme_font_size_override("font_size", 11)
     description.add_theme_color_override("font_color", MUTED)
     box.add_child(description)
     var params: MovementParams = MovementSettings.params
     for mc in MOVEMENT_CONTROLS:
         var key: String = str(mc["name"])
-        if mc["type"] == "bool":
-            var check := CheckBox.new()
-            check.text = key.replace("_", " ").capitalize()
-            check.button_pressed = bool(params.get(key))
-            check.toggled.connect(func(value: bool): params.set(key, value))
-            box.add_child(check)
-        else:
-            _add_movement_slider(box, params, key, float(mc["min"]), float(mc["max"]))
-    var reset := Button.new()
-    reset.text = "RESET DEFAULTS"
-    reset.pressed.connect(_on_reset_movement)
-    box.add_child(reset)
-
-func _add_movement_slider(parent: VBoxContainer, params: MovementParams, key: String,
-        min_value: float, max_value: float) -> void:
-    var row := HBoxContainer.new()
-    row.add_theme_constant_override("separation", 10)
-    parent.add_child(row)
-    var label := Label.new()
-    label.text = key.replace("_", " ").capitalize()
-    label.custom_minimum_size.x = 160.0
-    label.add_theme_font_size_override("font_size", 12)
-    label.add_theme_color_override("font_color", Color(0.67, 0.77, 0.88, 1.0))
-    row.add_child(label)
-    var slider := HSlider.new()
-    slider.min_value = min_value
-    slider.max_value = max_value
-    slider.step = 0.1 if max_value - min_value <= 40.0 else 1.0
-    # get() у MovementParams/Object принимает только 1 аргумент (2-й дефолт — только у Dictionary).
-    var raw: Variant = params.get(key)
-    var value := float(raw) if raw != null else min_value
-    slider.value = clampf(value, min_value, max_value)
-    slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    var readout := Label.new()
-    readout.text = "%.1f" % value
-    readout.custom_minimum_size.x = 52.0
-    readout.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-    slider.value_changed.connect(func(next_value: float):
-        params.set(key, next_value)
-        readout.text = "%.1f" % next_value
-    )
-    row.add_child(slider)
-    row.add_child(readout)
-
-func _on_reset_movement() -> void:
-    MovementSettings.reset_params()
-    _rebuild_cheat_tabs()
+        var check := CheckBox.new()
+        check.text = str(mc["label"])
+        check.button_pressed = bool(params.get(key))
+        check.toggled.connect(func(value: bool): params.set(key, value))
+        box.add_child(check)
 
 func _description_for(cheat_id: String) -> String:
     match cheat_id:
         "aimbot": return "Selects a visible target within the field of view."
         "triggerbot": return "Fires when the crosshair intersects an enemy."
         "ragebot": return "Snaps at the visible target and fires INSTANTLY on target acquisition. Sets shot chance."
+        "silent_aim": return "Fires at the target WITHOUT rotating the camera — your view stays free, bullets find the enemy."
         "anti_aim": return "Changes the pose shown to other players."
         "spinbot": return "Rotates your displayed model."
         "esp": return "Shows enemy outlines and status information."

@@ -17,6 +17,9 @@ const MAX_INPUT_BATCH: int = 24
 const MAX_INPUT_BUFFER: int = 96
 const SERVER_FIRE_INTERVAL: float = 0.12
 const PING_INTERVAL: float = 1.0
+const TRACER_MIN_DISTANCE_SQ: float = 0.25
+
+var tracer_script: GDScript = preload("res://scripts/fx/tracer.gd")
 const BASE_DAMAGE: float = 25.0
 const MAX_RANGE: float = 200.0
 const MAX_BACKTRACK_MS: float = 200.0
@@ -257,9 +260,10 @@ func broadcast_snapshot() -> void:
 			"pitch": p.get_visible_pitch(),
 			"hp": p.hp,
 			"alive": p.alive,
+			"crouch": p.crouch_amount,
 		}
 		snap[id] = state
-		snapshots.push(int(id), server_time, state["pos"], state["yaw"], state["pitch"], state["alive"], state["hp"])
+		snapshots.push(int(id), server_time, state["pos"], state["yaw"], state["pitch"], state["alive"], state["hp"], float(state["crouch"]))
 	rpc("receive_snapshot", snap, server_time)
 
 @rpc("authority", "call_remote", "unreliable_ordered")
@@ -269,7 +273,7 @@ func receive_snapshot(snap: Dictionary, _server_time: float) -> void:
 	latest_snapshot = snap
 	for id in snap:
 		var state: Dictionary = snap[id]
-		snapshots.push(int(id), local_time, state.get("pos", Vector3.ZERO), float(state.get("yaw", 0.0)), float(state.get("pitch", 0.0)), bool(state.get("alive", true)), float(state.get("hp", 100.0)))
+		snapshots.push(int(id), local_time, state.get("pos", Vector3.ZERO), float(state.get("yaw", 0.0)), float(state.get("pitch", 0.0)), bool(state.get("alive", true)), float(state.get("hp", 100.0)), float(state.get("crouch", 1.0)))
 	match_state_received.emit()
 
 ## A fire request contains view angles and an optional, bounded rewind window.
@@ -345,8 +349,9 @@ func _server_fire(shooter_id: int, yaw: float, pitch: float, rewind_ms: float = 
 	var victim = null
 	var zone: String = ""
 	var damage_multiplier: float = 1.0
+	var historical_hit: Dictionary = {}
 	if rewind_ms > 0.0:
-		var historical_hit: Dictionary = _find_historical_hit(origin, direction, shooter_id, rewind_ms, blocker_distance)
+		historical_hit = _find_historical_hit(origin, direction, shooter_id, rewind_ms, blocker_distance)
 		if not historical_hit.is_empty():
 			victim = server_players.get(int(historical_hit["player_id"]))
 			zone = str(historical_hit["zone"])
@@ -355,6 +360,15 @@ func _server_fire(shooter_id: int, yaw: float, pitch: float, rewind_ms: float = 
 		victim = current_victim
 		zone = current_zone
 		damage_multiplier = current_multiplier
+
+	# Трассер уходит всем (и хосту) при ЛЮБОМ выстреле: промах или попадание.
+	var end_point: Vector3 = origin + direction * MAX_RANGE
+	if not historical_hit.is_empty():
+		end_point = origin + direction * minf(float(historical_hit["distance"]), blocker_distance)
+	elif not current_hit.is_empty():
+		end_point = current_hit["position"]
+	_emit_tracer(origin, end_point)
+
 	if victim == null or victim == shooter or not victim.alive or zone.is_empty():
 		return
 
@@ -394,8 +408,10 @@ func _find_historical_hit(origin: Vector3, direction: Vector3, shooter_id: int, 
 		if not bool(state.get("alive", true)):
 			continue
 		var player_position: Vector3 = state["pos"]
+		# присед сжимает модель/хитзоны — этим же множителем проверяем исторические точки
+		var squat: float = clampf(float(state.get("crouch", 1.0)), 0.5, 1.5)
 		for zone_data in zones:
-			var center: Vector3 = player_position + zone_data["offset"]
+			var center: Vector3 = player_position + (zone_data["offset"] as Vector3) * squat
 			var distance: float = _ray_sphere_distance(origin, direction, center, float(zone_data["radius"]))
 			if distance < 0.0 or distance >= best_distance or distance >= blocker_distance or distance > MAX_RANGE:
 				continue
@@ -423,6 +439,23 @@ func _ray_sphere_distance(origin: Vector3, direction: Vector3, center: Vector3, 
 @rpc("authority", "call_remote", "reliable")
 func receive_hit(shooter_id: int, victim_id: int, zone: String, damage: float, killed: bool) -> void:
 	hit_confirmed.emit(shooter_id, victim_id, zone, damage, killed)
+
+## Трассер рисуется у всех, включая хоста (call_local).
+@rpc("authority", "call_local", "unreliable")
+func receive_tracer(from_pos: Vector3, to_pos: Vector3) -> void:
+	var tree_root: Viewport = get_tree().root
+	if tree_root == null or tree_root.current_scene == null:
+		return
+	var tracer: Node3D = tracer_script.new()
+	tracer.from = from_pos
+	tracer.to = to_pos
+	tracer.name = "Tracer"
+	tree_root.current_scene.add_child(tracer)
+
+func _emit_tracer(from_pos: Vector3, to_pos: Vector3) -> void:
+	if from_pos.distance_squared_to(to_pos) < TRACER_MIN_DISTANCE_SQ:
+		return
+	rpc("receive_tracer", from_pos, to_pos)
 
 func _start_respawn_timer(id: int) -> void:
 	await get_tree().create_timer(GameState.RESPAWN_TIME).timeout
