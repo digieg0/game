@@ -1,5 +1,5 @@
 extends Node
-## Корень игры: лобби -> матч. Спавнит HUD/меню/ESP/scoreboard, мир арены.
+## Main flow: lobby -> multiplayer match -> return to lobby after disconnect.
 
 @onready var ui_root: Control = $UIRoot
 @onready var world_root: Node3D = $WorldRoot
@@ -11,12 +11,12 @@ const SCOREBOARD := preload("res://scenes/ui/scoreboard.tscn")
 const CHEAT_MENU := preload("res://scenes/ui/cheat_menu.tscn")
 const ESP_OVERLAY := preload("res://scripts/ui/esp_overlay.gd")
 
-var lobby: Control = null
-var arena: Node3D = null
-var hud: CanvasLayer = null
-var scoreboard: CanvasLayer = null
-var cheat_menu: CanvasLayer = null
-var esp_overlay: Control = null
+var lobby: Control
+var arena: Node3D
+var hud: CanvasLayer
+var scoreboard: CanvasLayer
+var cheat_menu: CanvasLayer
+var esp_overlay: Control
 
 func _ready() -> void:
 	NetManager.connected_to_server.connect(_on_connected)
@@ -24,8 +24,15 @@ func _ready() -> void:
 	NetManager.server_disconnected_signal.connect(_on_disconnected)
 	_show_lobby()
 
+func _unhandled_input(event: InputEvent) -> void:
+	if arena != null and event.is_action_pressed("escape_menu"):
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
+		get_viewport().set_input_as_handled()
+
 func _show_lobby() -> void:
 	_clear_match()
+	if lobby != null and is_instance_valid(lobby):
+		lobby.queue_free()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	lobby = LOBBY.instantiate()
 	lobby.host_requested.connect(_on_host_requested)
@@ -33,32 +40,44 @@ func _show_lobby() -> void:
 	ui_root.add_child(lobby)
 
 func _clear_match() -> void:
-	if arena: arena.queue_free(); arena = null
-	if hud: hud.queue_free(); hud = null
-	if scoreboard: scoreboard.queue_free(); scoreboard = null
-	if cheat_menu: cheat_menu.queue_free(); cheat_menu = null
-	if esp_overlay: esp_overlay.queue_free(); esp_overlay = null
+	for node in [arena, hud, scoreboard, cheat_menu, esp_overlay]:
+		if node != null and is_instance_valid(node):
+			node.queue_free()
+	arena = null
+	hud = null
+	scoreboard = null
+	cheat_menu = null
+	esp_overlay = null
 
 func _on_host_requested(pname: String, port: int) -> void:
-	if NetManager.host_game(pname, port) == OK:
+	var err: Error = NetManager.host_game(pname, port)
+	if err == OK:
 		_start_match()
+	elif lobby:
+		lobby.show_error("Не удалось создать сервер на этом порту (%s)." % error_string(err))
 
 func _on_join_requested(pname: String, ip: String, port: int) -> void:
-	NetManager.join_game(pname, ip, port)
+	var err: Error = NetManager.join_game(pname, ip, port)
+	if err != OK and lobby:
+		lobby.show_error("Не удалось начать подключение (%s)." % error_string(err))
+	elif lobby:
+		lobby.show_error("Подключение к %s:%d…" % [ip, port])
 
 func _on_connected() -> void:
 	_start_match()
 
 func _on_connection_failed() -> void:
-	if lobby: lobby.show_error("Не удалось подключиться")
+	if lobby:
+		lobby.show_error("Не удалось подключиться. Проверьте IP, порт и доступность сервера.")
 
 func _on_disconnected() -> void:
 	_show_lobby()
 
 func _start_match() -> void:
-	if lobby:
+	if lobby != null:
 		lobby.queue_free()
 		lobby = null
+	_clear_match()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	arena = ARENA.instantiate()
 	world_root.add_child(arena)
@@ -70,4 +89,5 @@ func _start_match() -> void:
 	add_child(cheat_menu)
 	esp_overlay = Control.new()
 	esp_overlay.set_script(ESP_OVERLAY)
+	esp_overlay.name = "ESPOverlay"
 	hud.add_child(esp_overlay)

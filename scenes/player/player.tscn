@@ -1,37 +1,96 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/player_model.gd" id="2_model"]
 [ext_resource type="Script" path="res://scripts/player/hitbox.gd" id="3_hitbox"]
 
-[sub_resource type="CapsuleShape3D" id="Shape_body"]
+[sub_resource type="CapsuleShape3D" id="Shape_player"]
 radius = 0.4
 height = 1.8
 
-[sub_resource type="BoxShape3D" id="Shape_head"]
-size = Vector3(0.45, 0.45, 0.45)
+[sub_resource type="SphereShape3D" id="Shape_head"]
+radius = 0.2
+
+[sub_resource type="CapsuleShape3D" id="Shape_hitbox_body"]
+radius = 0.31
+height = 0.82
 
 [sub_resource type="BoxShape3D" id="Shape_legs"]
-size = Vector3(0.6, 0.7, 0.4)
+size = Vector3(0.58, 0.64, 0.4)
 
-[sub_resource type="CapsuleMesh" id="Mesh_body"]
-radius = 0.4
-height = 1.8
+[sub_resource type="CapsuleMesh" id="Mesh_torso"]
+radius = 0.29
+height = 1.02
 
-[sub_resource type="BoxMesh" id="Mesh_head"]
-size = Vector3(0.45, 0.45, 0.45)
+[sub_resource type="SphereMesh" id="Mesh_head"]
+radius = 0.18
+height = 0.36
 
-[sub_resource type="BoxMesh" id="Mesh_legs"]
-size = Vector3(0.6, 0.7, 0.4)
+[sub_resource type="SphereMesh" id="Mesh_hair"]
+radius = 0.19
+height = 0.22
 
-[sub_resource type="StandardMaterial3D" id="Mat_body"]
-albedo_color = Color(0.2, 0.45, 0.9, 1)
+[sub_resource type="CylinderMesh" id="Mesh_neck"]
+top_radius = 0.085
+bottom_radius = 0.085
+height = 0.16
 
-[sub_resource type="StandardMaterial3D" id="Mat_head"]
-albedo_color = Color(0.95, 0.75, 0.6, 1)
+[sub_resource type="BoxMesh" id="Mesh_vest"]
+size = Vector3(0.45, 0.58, 0.12)
 
-[sub_resource type="StandardMaterial3D" id="Mat_legs"]
-albedo_color = Color(0.15, 0.15, 0.2, 1)
+[sub_resource type="BoxMesh" id="Mesh_pouch"]
+size = Vector3(0.13, 0.14, 0.065)
+
+[sub_resource type="CapsuleMesh" id="Mesh_arm"]
+radius = 0.095
+height = 0.62
+
+[sub_resource type="SphereMesh" id="Mesh_hand"]
+radius = 0.085
+height = 0.17
+
+[sub_resource type="CapsuleMesh" id="Mesh_leg"]
+radius = 0.12
+height = 0.70
+
+[sub_resource type="BoxMesh" id="Mesh_boot"]
+size = Vector3(0.23, 0.13, 0.34)
+
+[sub_resource type="SphereMesh" id="Mesh_eye"]
+radius = 0.025
+height = 0.05
+
+[sub_resource type="SphereMesh" id="Mesh_nose"]
+radius = 0.033
+height = 0.066
+
+[sub_resource type="StandardMaterial3D" id="Mat_shirt"]
+albedo_color = Color(0.12, 0.34, 0.58, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Mat_skin"]
+albedo_color = Color(0.78, 0.55, 0.39, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Mat_pants"]
+albedo_color = Color(0.105, 0.14, 0.19, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="Mat_boots"]
+albedo_color = Color(0.025, 0.035, 0.045, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="Mat_vest"]
+albedo_color = Color(0.16, 0.2, 0.19, 1)
+roughness = 0.92
+
+[sub_resource type="StandardMaterial3D" id="Mat_hair"]
+albedo_color = Color(0.055, 0.065, 0.08, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Mat_eye"]
+albedo_color = Color(0.018, 0.022, 0.03, 1)
+roughness = 0.32
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
@@ -39,12 +98,19 @@ collision_mask = 1
 script = ExtResource("1_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("Shape_body")
 position = Vector3(0, 0.9, 0)
+shape = SubResource("Shape_player")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
-fov = 90.0
+[node name="CameraPivot" type="Node3D" parent="."]
+position = Vector3(0, 1.58, 0)
+
+[node name="SpringArm3D" type="SpringArm3D" parent="CameraPivot"]
+spring_length = 0.0
+collision_mask = 1
+margin = 0.18
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot/SpringArm3D"]
+fov = 86.0
 current = false
 
 [node name="Model" type="Node3D" parent="."]
@@ -53,21 +119,94 @@ script = ExtResource("2_model")
 [node name="BodyPivot" type="Node3D" parent="Model"]
 position = Vector3(0, 1.0, 0)
 
-[node name="BodyMesh" type="MeshInstance3D" parent="Model/BodyPivot"]
-mesh = SubResource("Mesh_body")
-material_override = SubResource("Mat_body")
+[node name="TorsoMesh" type="MeshInstance3D" parent="Model/BodyPivot"]
+mesh = SubResource("Mesh_torso")
+material_override = SubResource("Mat_shirt")
+
+[node name="VestMesh" type="MeshInstance3D" parent="Model/BodyPivot"]
+position = Vector3(0, 0.02, -0.225)
+mesh = SubResource("Mesh_vest")
+material_override = SubResource("Mat_vest")
+
+[node name="LeftPouch" type="MeshInstance3D" parent="Model/BodyPivot"]
+position = Vector3(-0.13, -0.14, -0.305)
+mesh = SubResource("Mesh_pouch")
+material_override = SubResource("Mat_vest")
+
+[node name="RightPouch" type="MeshInstance3D" parent="Model/BodyPivot"]
+position = Vector3(0.13, -0.14, -0.305)
+mesh = SubResource("Mesh_pouch")
+material_override = SubResource("Mat_vest")
+
+[node name="NeckMesh" type="MeshInstance3D" parent="Model"]
+position = Vector3(0, 1.43, 0)
+mesh = SubResource("Mesh_neck")
+material_override = SubResource("Mat_skin")
+
+[node name="LeftArmPivot" type="Node3D" parent="Model/BodyPivot"]
+position = Vector3(-0.34, 0.25, 0)
+rotation = Vector3(0, 0, -0.15)
+
+[node name="ArmMesh" type="MeshInstance3D" parent="Model/BodyPivot/LeftArmPivot"]
+position = Vector3(0, -0.23, 0)
+mesh = SubResource("Mesh_arm")
+material_override = SubResource("Mat_shirt")
+
+[node name="HandMesh" type="MeshInstance3D" parent="Model/BodyPivot/LeftArmPivot"]
+position = Vector3(0, -0.52, -0.015)
+mesh = SubResource("Mesh_hand")
+material_override = SubResource("Mat_skin")
+
+[node name="RightArmPivot" type="Node3D" parent="Model/BodyPivot"]
+position = Vector3(0.34, 0.25, 0)
+rotation = Vector3(0, 0, 0.15)
+
+[node name="ArmMesh" type="MeshInstance3D" parent="Model/BodyPivot/RightArmPivot"]
+position = Vector3(0, -0.23, 0)
+mesh = SubResource("Mesh_arm")
+material_override = SubResource("Mat_shirt")
+
+[node name="HandMesh" type="MeshInstance3D" parent="Model/BodyPivot/RightArmPivot"]
+position = Vector3(0, -0.52, -0.015)
+mesh = SubResource("Mesh_hand")
+material_override = SubResource("Mat_skin")
+
+[node name="HitboxBody" type="Area3D" parent="Model/BodyPivot"]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("3_hitbox")
+zone = 1
+
+[node name="Shape" type="CollisionShape3D" parent="Model/BodyPivot/HitboxBody"]
+shape = SubResource("Shape_hitbox_body")
 
 [node name="HeadPivot" type="Node3D" parent="Model"]
-position = Vector3(0, 1.65, 0)
+position = Vector3(0, 1.62, 0)
 
 [node name="HeadMesh" type="MeshInstance3D" parent="Model/HeadPivot"]
 mesh = SubResource("Mesh_head")
-material_override = SubResource("Mat_head")
+material_override = SubResource("Mat_skin")
 
-[node name="LegsMesh" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
-mesh = SubResource("Mesh_legs")
-material_override = SubResource("Mat_legs")
+[node name="HairMesh" type="MeshInstance3D" parent="Model/HeadPivot"]
+position = Vector3(0, 0.125, 0.015)
+scale = Vector3(1, 0.55, 1)
+mesh = SubResource("Mesh_hair")
+material_override = SubResource("Mat_hair")
+
+[node name="LeftEye" type="MeshInstance3D" parent="Model/HeadPivot"]
+position = Vector3(-0.062, 0.018, -0.166)
+mesh = SubResource("Mesh_eye")
+material_override = SubResource("Mat_eye")
+
+[node name="RightEye" type="MeshInstance3D" parent="Model/HeadPivot"]
+position = Vector3(0.062, 0.018, -0.166)
+mesh = SubResource("Mesh_eye")
+material_override = SubResource("Mat_eye")
+
+[node name="NoseMesh" type="MeshInstance3D" parent="Model/HeadPivot"]
+position = Vector3(0, -0.02, -0.179)
+mesh = SubResource("Mesh_nose")
+material_override = SubResource("Mat_skin")
 
 [node name="HitboxHead" type="Area3D" parent="Model/HeadPivot"]
 collision_layer = 4
@@ -78,17 +217,34 @@ zone = 0
 [node name="Shape" type="CollisionShape3D" parent="Model/HeadPivot/HitboxHead"]
 shape = SubResource("Shape_head")
 
-[node name="HitboxBody" type="Area3D" parent="Model/BodyPivot"]
-collision_layer = 4
-collision_mask = 0
-script = ExtResource("3_hitbox")
-zone = 1
+[node name="LeftLegPivot" type="Node3D" parent="Model"]
+position = Vector3(-0.15, 0.71, 0)
 
-[node name="Shape" type="CollisionShape3D" parent="Model/BodyPivot/HitboxBody"]
-shape = SubResource("Shape_body")
+[node name="LegMesh" type="MeshInstance3D" parent="Model/LeftLegPivot"]
+position = Vector3(0, -0.31, 0)
+mesh = SubResource("Mesh_leg")
+material_override = SubResource("Mat_pants")
+
+[node name="BootMesh" type="MeshInstance3D" parent="Model/LeftLegPivot"]
+position = Vector3(0, -0.59, -0.055)
+mesh = SubResource("Mesh_boot")
+material_override = SubResource("Mat_boots")
+
+[node name="RightLegPivot" type="Node3D" parent="Model"]
+position = Vector3(0.15, 0.71, 0)
+
+[node name="LegMesh" type="MeshInstance3D" parent="Model/RightLegPivot"]
+position = Vector3(0, -0.31, 0)
+mesh = SubResource("Mesh_leg")
+material_override = SubResource("Mat_pants")
+
+[node name="BootMesh" type="MeshInstance3D" parent="Model/RightLegPivot"]
+position = Vector3(0, -0.59, -0.055)
+mesh = SubResource("Mesh_boot")
+material_override = SubResource("Mat_boots")
 
 [node name="HitboxLegs" type="Area3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+position = Vector3(0, 0.38, 0)
 collision_layer = 4
 collision_mask = 0
 script = ExtResource("3_hitbox")

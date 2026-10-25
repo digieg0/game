@@ -6,7 +6,6 @@ func setup_settings() -> void:
 	id = "esp"
 	category = "Visuals"
 	settings = {
-		"enabled": false,
 		"box": true,
 		"hp": true,
 		"name": true,

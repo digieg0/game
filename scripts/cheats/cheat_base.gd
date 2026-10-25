@@ -63,8 +63,9 @@ func to_dict() -> Dictionary:
 		"bind_hold": bind_hold,
 	}
 
-func from_dict(d: Dictionary) -> void:
-	enabled = bool(d.get("enabled", false))
+func from_dict(d: Dictionary, player: Node = null) -> void:
+	var desired_enabled: bool = bool(d.get("enabled", false))
+	set_enabled(player, desired_enabled)
 	bind_key = int(d.get("bind_key", KEY_NONE))
 	bind_hold = bool(d.get("bind_hold", false))
 	var s: Dictionary = d.get("settings", {})

@@ -8,7 +8,6 @@ func setup_settings() -> void:
 	id = "fake_lag"
 	category = "Misc"
 	settings = {
-		"enabled": false,
 		"limit": 5,
 	}
 
@@ -20,11 +19,11 @@ func apply(player: Node, delta: float) -> void:
 
 func should_send_input() -> bool:
 	var limit: int = int(get_setting("limit", 5))
-	var enabled: bool = bool(get_setting("enabled", false))
+	var enabled: bool = self.enabled
 	if not enabled:
 		return true
 	_ticks += 1
-	return _ticks % (limit + 1) != 0
+	return _ticks % (limit + 1) == 0
 
 func _on_disable(player: Node) -> void:
 	_ticks = 0

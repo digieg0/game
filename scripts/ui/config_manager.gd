@@ -1,49 +1,66 @@
 extends Node
-## Конфигуратор читов: сохраняет/загружает состояние CheatRegistry в JSON (user://configs/).
+## JSON config store in user://configs/ with safe filenames.
 
-var configs_dir: String = "user://configs/"
+const CONFIGS_DIR: String = "user://configs/"
 
 func _ready() -> void:
-	if not DirAccess.dir_exists_absolute(configs_dir):
-		var d: DirAccess = DirAccess.open(configs_dir)
-		if d != null:
-			d.make_dir_absolute(configs_dir)
-			d.close()
+    _ensure_directory()
 
-func save_config(name: String) -> void:
-	if name == "":
-		name = "default"
-	var path: String = configs_dir + name + ".json"
-	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
-	if file == null:
-		push_error("Не удалось создать конфиг: " + path)
-		return
-	file.store_line(JSON.stringify(CheatRegistry.to_dict(), "\t"))
-	file.close()
+func _ensure_directory() -> bool:
+    var absolute_path: String = ProjectSettings.globalize_path(CONFIGS_DIR)
+    var err: Error = DirAccess.make_dir_recursive_absolute(absolute_path)
+    return err == OK or DirAccess.dir_exists_absolute(absolute_path)
 
-func load_config(name: String) -> void:
-	if name == "":
-		name = "default"
-	var path: String = configs_dir + name + ".json"
-	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		push_error("Конфиг не найден: " + path)
-		return
-	var data: Variant = JSON.parse_string(file.get_as_text())
-	file.close()
-	if data != null and typeof(data) == TYPE_DICTIONARY:
-		CheatRegistry.from_dict(data)
+func _safe_config_name(value: String) -> String:
+    var cleaned := value.strip_edges()
+    var regex := RegEx.new()
+    regex.compile("[^A-Za-z0-9_-]")
+    cleaned = regex.sub(cleaned, "", true)
+    return cleaned.substr(0, 40) if not cleaned.is_empty() else "default"
 
-func list_configs() -> Array:
-	var out: Array = []
-	if DirAccess.dir_exists_absolute(configs_dir):
-		var d: DirAccess = DirAccess.open(configs_dir)
-		if d != null:
-			d.list_dir_begin()
-			var f := d.get_next()
-			while f != "":
-				if f.ends_with(".json"):
-					out.append(f.get_basename())
-				f = d.get_next()
-			d.list_dir_end()
-	return out
+func save_config(name: String) -> bool:
+    if not _ensure_directory():
+        push_error("Не удалось создать папку конфигов")
+        return false
+    var path: String = CONFIGS_DIR + _safe_config_name(name) + ".json"
+    var file := FileAccess.open(path, FileAccess.WRITE)
+    if file == null:
+        push_error("Не удалось создать конфиг: " + path)
+        return false
+    file.store_line(JSON.stringify(CheatRegistry.to_dict(), "\t"))
+    file.close()
+    return true
+
+func load_config(name: String, player: Node = null) -> bool:
+    var path: String = CONFIGS_DIR + _safe_config_name(name) + ".json"
+    if not FileAccess.file_exists(path):
+        push_error("Конфиг не найден: " + path)
+        return false
+    var file := FileAccess.open(path, FileAccess.READ)
+    if file == null:
+        push_error("Не удалось прочитать конфиг: " + path)
+        return false
+    var parsed: Variant = JSON.parse_string(file.get_as_text())
+    file.close()
+    if not (parsed is Dictionary):
+        push_error("Неверный формат конфигурации")
+        return false
+    CheatRegistry.from_dict(parsed, player)
+    return true
+
+func list_configs() -> Array[String]:
+    var result: Array[String] = []
+    if not _ensure_directory():
+        return result
+    var dir := DirAccess.open(CONFIGS_DIR)
+    if dir == null:
+        return result
+    dir.list_dir_begin()
+    var filename := dir.get_next()
+    while filename != "":
+        if not dir.current_is_dir() and filename.ends_with(".json"):
+            result.append(filename.get_basename())
+        filename = dir.get_next()
+    dir.list_dir_end()
+    result.sort()
+    return result

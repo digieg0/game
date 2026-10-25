@@ -1,8 +1,22 @@
 extends Node
-## Автолоад: реестр читов. Сканирует scripts/cheats/ и создаёт экземпляр каждого чита.
+## Автолоад: реестр читов. Регистрирует каждый чит через явный preload,
+## чтобы работать и в редакторе, и в экспортированном билде (res:// в PCK
+## не поддерживает перечисление файлов через DirAccess).
 
 var cheats: Array = []
 var by_id: Dictionary = {}
+
+var CHEAT_PATHS: Array[String] = [
+	"res://scripts/cheats/aimbot.gd",
+	"res://scripts/cheats/anti_aim.gd",
+	"res://scripts/cheats/backtrack.gd",
+	"res://scripts/cheats/bhop_assist.gd",
+	"res://scripts/cheats/esp.gd",
+	"res://scripts/cheats/fake_lag.gd",
+	"res://scripts/cheats/resolver.gd",
+	"res://scripts/cheats/spinbot.gd",
+	"res://scripts/cheats/triggerbot.gd",
+]
 
 func _ready() -> void:
 	load_all()
@@ -10,17 +24,8 @@ func _ready() -> void:
 func load_all() -> void:
 	cheats.clear()
 	by_id.clear()
-	var dir := DirAccess.open("res://scripts/cheats/")
-	if dir == null:
-		push_error("Не удалось открыть папку читов")
-		return
-	dir.list_dir_begin()
-	var fname := dir.get_next()
-	while fname != "":
-		if fname.ends_with(".gd") and fname != "cheat_base.gd" and fname != "cheat_registry.gd":
-			_register_from_file("res://scripts/cheats/" + fname)
-		fname = dir.get_next()
-	dir.list_dir_end()
+	for path in CHEAT_PATHS:
+		_register_from_file(path)
 
 func _register_from_file(path: String) -> void:
 	var script: Script = load(path)
@@ -56,8 +61,8 @@ func to_dict() -> Dictionary:
 		out[c.id] = c.to_dict()
 	return out
 
-func from_dict(d: Dictionary) -> void:
+func from_dict(d: Dictionary, player: Node = null) -> void:
 	for cheat_id in d:
 		var c: Cheat = by_id.get(cheat_id, null)
 		if c:
-			c.from_dict(d[cheat_id])
+			c.from_dict(d[cheat_id], player)

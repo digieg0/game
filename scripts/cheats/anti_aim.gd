@@ -32,9 +32,8 @@ func apply(player: Node, delta: float) -> void:
 		"up":
 			_angle = deg_to_rad(yaw_off - 90.0)
 	if player != null:
-		player.aa_yaw_offset = deg_to_rad(yaw_off)
+		player.aa_yaw_offset = _angle
 		player.aa_pitch = deg_to_rad(pitch_off)
-		player.visible_yaw += deg_to_rad(yaw_off)
 
 func _on_disable(player: Node) -> void:
 	if player != null:
