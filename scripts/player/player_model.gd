@@ -38,13 +38,13 @@ func _process(delta: float) -> void:
         var swing: float = sin(_walk_phase) * 0.58 * blend
         left_leg.rotation.x = swing
         right_leg.rotation.x = -swing
-        left_arm.rotation.x = -swing * 0.52
-        right_arm.rotation.x = swing * 0.52
     else:
         left_leg.rotation.x = lerpf(left_leg.rotation.x, 0.0, minf(delta * 8.0, 1.0))
         right_leg.rotation.x = lerpf(right_leg.rotation.x, 0.0, minf(delta * 8.0, 1.0))
-        left_arm.rotation.x = lerpf(left_arm.rotation.x, 0.0, minf(delta * 8.0, 1.0))
-        right_arm.rotation.x = lerpf(right_arm.rotation.x, 0.0, minf(delta * 8.0, 1.0))
+    # Руки держат винтовку: фиксируем позу, лёгкое покачивание при ходьбе.
+    var sway: float = sin(_walk_phase) * 0.05 * blend
+    left_arm.rotation.x = lerpf(left_arm.rotation.x, 0.98 + sway, minf(delta * 10.0, 1.0))
+    right_arm.rotation.x = lerpf(right_arm.rotation.x, 1.12 - sway, minf(delta * 10.0, 1.0))
 
 func set_server_pose(yaw: float, pitch: float) -> void:
     server_yaw = yaw

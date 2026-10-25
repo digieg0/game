@@ -115,7 +115,21 @@ func _on_backdrop_input(event: InputEvent) -> void:
     if event is InputEventMouseButton and event.pressed and _open:
         _set_open(false)
 
+const MOVEMENT_CONTROLS: Array = [
+    {"name": "autobhop", "type": "bool"},
+    {"name": "enable_bhop", "type": "bool"},
+    {"name": "gravity", "type": "float", "min": 100.0, "max": 1600.0},
+    {"name": "accelerate", "type": "float", "min": 1.0, "max": 20.0},
+    {"name": "air_accelerate", "type": "float", "min": 1.0, "max": 200.0},
+    {"name": "air_wishspeed_cap", "type": "float", "min": 1.0, "max": 500.0},
+    {"name": "friction", "type": "float", "min": 0.0, "max": 15.0},
+    {"name": "weapon_max_speed", "type": "float", "min": 100.0, "max": 1000.0},
+    {"name": "jump_height", "type": "float", "min": 10.0, "max": 300.0},
+]
+
 func _build_cheat_tab(parent: VBoxContainer, category: String) -> void:
+    if category == "Misc":
+        _build_movement_section(parent)
     var category_cheats: Array = CheatRegistry.get_by_category(category)
     if category_cheats.is_empty():
         var empty_label := Label.new()
@@ -166,6 +180,86 @@ func _build_cheat_tab(parent: VBoxContainer, category: String) -> void:
             if str(key) == "enabled":
                 continue
             _add_setting_row(box, cheat, str(key))
+
+func _build_movement_section(parent: VBoxContainer) -> void:
+    var card := PanelContainer.new()
+    var card_style := StyleBoxFlat.new()
+    card_style.bg_color = Color(0.065, 0.09, 0.13, 1.0)
+    card_style.border_color = Color(0.24, 0.7, 0.42, 0.8)
+    card_style.set_border_width_all(1)
+    card_style.set_corner_radius_all(6)
+    card.add_theme_stylebox_override("panel", card_style)
+    parent.add_child(card)
+    var margin := MarginContainer.new()
+    margin.add_theme_constant_override("margin_left", 12)
+    margin.add_theme_constant_override("margin_right", 12)
+    margin.add_theme_constant_override("margin_top", 10)
+    margin.add_theme_constant_override("margin_bottom", 10)
+    card.add_child(margin)
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 7)
+    margin.add_child(box)
+    var title_row := HBoxContainer.new()
+    box.add_child(title_row)
+    var name_label := Label.new()
+    name_label.text = "Movement  /  CS2"
+    name_label.add_theme_font_size_override("font_size", 15)
+    name_label.add_theme_color_override("font_color", Color(0.5, 0.95, 0.7, 1.0))
+    name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    title_row.add_child(name_label)
+    var description := Label.new()
+    description.text = "Меняет MovementParams в рантайме. Физика только читает."
+    description.add_theme_font_size_override("font_size", 11)
+    description.add_theme_color_override("font_color", MUTED)
+    box.add_child(description)
+    var params: MovementParams = MovementSettings.params
+    for mc in MOVEMENT_CONTROLS:
+        var key: String = str(mc["name"])
+        if mc["type"] == "bool":
+            var check := CheckBox.new()
+            check.text = key.replace("_", " ").capitalize()
+            check.button_pressed = bool(params.get(key))
+            check.toggled.connect(func(value: bool): params.set(key, value))
+            box.add_child(check)
+        else:
+            _add_movement_slider(box, params, key, float(mc["min"]), float(mc["max"]))
+    var reset := Button.new()
+    reset.text = "RESET DEFAULTS"
+    reset.pressed.connect(_on_reset_movement)
+    box.add_child(reset)
+
+func _add_movement_slider(parent: VBoxContainer, params: MovementParams, key: String,
+        min_value: float, max_value: float) -> void:
+    var row := HBoxContainer.new()
+    row.add_theme_constant_override("separation", 10)
+    parent.add_child(row)
+    var label := Label.new()
+    label.text = key.replace("_", " ").capitalize()
+    label.custom_minimum_size.x = 160.0
+    label.add_theme_font_size_override("font_size", 12)
+    label.add_theme_color_override("font_color", Color(0.67, 0.77, 0.88, 1.0))
+    row.add_child(label)
+    var slider := HSlider.new()
+    slider.min_value = min_value
+    slider.max_value = max_value
+    slider.step = 0.1 if max_value - min_value <= 40.0 else 1.0
+    var value := float(params.get(key, min_value))
+    slider.value = clampf(value, min_value, max_value)
+    slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    var readout := Label.new()
+    readout.text = "%.1f" % value
+    readout.custom_minimum_size.x = 52.0
+    readout.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    slider.value_changed.connect(func(next_value: float):
+        params.set(key, next_value)
+        readout.text = "%.1f" % next_value
+    )
+    row.add_child(slider)
+    row.add_child(readout)
+
+func _on_reset_movement() -> void:
+    MovementSettings.reset_params()
+    _rebuild_cheat_tabs()
 
 func _description_for(cheat_id: String) -> String:
     match cheat_id:

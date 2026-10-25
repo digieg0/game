@@ -10,6 +10,7 @@ const HUD := preload("res://scenes/ui/hud.tscn")
 const SCOREBOARD := preload("res://scenes/ui/scoreboard.tscn")
 const CHEAT_MENU := preload("res://scenes/ui/cheat_menu.tscn")
 const ESP_OVERLAY := preload("res://scripts/ui/esp_overlay.gd")
+const MOVEMENT_DEBUG := preload("res://movement/debug_overlay.gd")
 
 var lobby: Control
 var arena: Node3D
@@ -17,6 +18,7 @@ var hud: CanvasLayer
 var scoreboard: CanvasLayer
 var cheat_menu: CanvasLayer
 var esp_overlay: Control
+var movement_debug: CanvasLayer
 
 func _ready() -> void:
 	NetManager.connected_to_server.connect(_on_connected)
@@ -40,7 +42,7 @@ func _show_lobby() -> void:
 	ui_root.add_child(lobby)
 
 func _clear_match() -> void:
-	for node in [arena, hud, scoreboard, cheat_menu, esp_overlay]:
+	for node in [arena, hud, scoreboard, cheat_menu, esp_overlay, movement_debug]:
 		if node != null and is_instance_valid(node):
 			node.queue_free()
 	arena = null
@@ -48,6 +50,7 @@ func _clear_match() -> void:
 	scoreboard = null
 	cheat_menu = null
 	esp_overlay = null
+	movement_debug = null
 
 func _on_host_requested(pname: String, port: int) -> void:
 	var err: Error = NetManager.host_game(pname, port)
@@ -91,3 +94,5 @@ func _start_match() -> void:
 	esp_overlay.set_script(ESP_OVERLAY)
 	esp_overlay.name = "ESPOverlay"
 	hud.add_child(esp_overlay)
+	movement_debug = MOVEMENT_DEBUG.new()
+	add_child(movement_debug)

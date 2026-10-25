@@ -1,5 +1,6 @@
 extends Cheat
-## Bhop assist: автоматически прыгает при касании земли.
+## Bhop assist: автоматически прыгает при касании земли
+## (через буфер прыжка, чтобы прыжок шёл ДО трения и не терял скорость).
 
 var _was_on_floor: bool = false
 
@@ -17,7 +18,7 @@ func apply(player: Node, _delta: float) -> void:
 		return
 	var cb: CharacterBody3D = player
 	if cb.is_on_floor() and not _was_on_floor:
-		cb.velocity.y = 5.5
+		player.jump_buffer = maxi(player.jump_buffer, int(player.params.jump_buffer_ticks))
 		_was_on_floor = true
 	elif not cb.is_on_floor():
 		_was_on_floor = false

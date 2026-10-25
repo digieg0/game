@@ -62,8 +62,9 @@ func apply(player: Node, _delta: float) -> void:
 	if now < _next_attempt_time:
 		return
 	# Выход на противника — стреляем сразу, шанс первого выстрела отдельный.
-	var chance: float = float(get_setting("first_shot_chance", 100.0)) \
-		if newly_acquired else float(get_setting("chance", 85.0))
+	var chance_key: String = "first_shot_chance" if newly_acquired else "chance"
+	var default_chance: float = 100.0 if newly_acquired else 85.0
+	var chance: float = clampf(float(get_setting(chance_key, default_chance)), 0.0, 100.0)
 	_next_attempt_time = now + maxf(float(get_setting("retry_delay", 0.15)), 0.01)
 	if randf() * 100.0 < clampf(chance, 0.0, 100.0):
 		player.force_shoot = true

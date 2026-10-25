@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=43 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/player_model.gd" id="2_model"]
@@ -92,6 +92,64 @@ roughness = 0.9
 albedo_color = Color(0.018, 0.022, 0.03, 1)
 roughness = 0.32
 
+[sub_resource type="StandardMaterial3D" id="Mat_gun"]
+albedo_color = Color(0.07, 0.075, 0.09, 1)
+metallic = 0.35
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_gun_dark"]
+albedo_color = Color(0.045, 0.05, 0.06, 1)
+roughness = 0.72
+
+[sub_resource type="StandardMaterial3D" id="Mat_gun_vm"]
+albedo_color = Color(0.07, 0.075, 0.09, 1)
+metallic = 0.35
+roughness = 0.5
+no_depth_test = true
+render_priority = 20
+
+[sub_resource type="StandardMaterial3D" id="Mat_glove_vm"]
+albedo_color = Color(0.14, 0.13, 0.115, 1)
+roughness = 0.9
+no_depth_test = true
+render_priority = 20
+
+[sub_resource type="BoxMesh" id="Mesh_r_body"]
+size = Vector3(0.075, 0.09, 0.66)
+
+[sub_resource type="BoxMesh" id="Mesh_r_barrel"]
+size = Vector3(0.032, 0.034, 0.4)
+
+[sub_resource type="BoxMesh" id="Mesh_r_mag"]
+size = Vector3(0.05, 0.17, 0.09)
+
+[sub_resource type="BoxMesh" id="Mesh_r_grip"]
+size = Vector3(0.05, 0.12, 0.055)
+
+[sub_resource type="BoxMesh" id="Mesh_r_stock"]
+size = Vector3(0.06, 0.11, 0.2)
+
+[sub_resource type="BoxMesh" id="Mesh_vm_body"]
+size = Vector3(0.085, 0.105, 0.42)
+
+[sub_resource type="BoxMesh" id="Mesh_vm_barrel"]
+size = Vector3(0.034, 0.036, 0.3)
+
+[sub_resource type="BoxMesh" id="Mesh_vm_mag"]
+size = Vector3(0.068, 0.18, 0.1)
+
+[sub_resource type="BoxMesh" id="Mesh_vm_grip"]
+size = Vector3(0.06, 0.13, 0.07)
+
+[sub_resource type="BoxMesh" id="Mesh_vm_stock"]
+size = Vector3(0.07, 0.13, 0.18)
+
+[sub_resource type="BoxMesh" id="Mesh_vm_hand_r"]
+size = Vector3(0.09, 0.095, 0.12)
+
+[sub_resource type="BoxMesh" id="Mesh_vm_hand_l"]
+size = Vector3(0.085, 0.09, 0.12)
+
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
 collision_mask = 1
@@ -112,6 +170,52 @@ margin = 0.18
 [node name="Camera3D" type="Camera3D" parent="CameraPivot/SpringArm3D"]
 fov = 86.0
 current = false
+
+[node name="VMRoot" type="Node3D" parent="CameraPivot/SpringArm3D/Camera3D"]
+position = Vector3(0.24, -0.18, -0.55)
+rotation = Vector3(0.02, -0.06, 0.03)
+
+[node name="VMBody" type="MeshInstance3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
+mesh = SubResource("Mesh_vm_body")
+material_override = SubResource("Mat_gun_vm")
+cast_shadow = 0
+
+[node name="VMBarrel" type="MeshInstance3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
+position = Vector3(0, 0.012, -0.34)
+mesh = SubResource("Mesh_vm_barrel")
+material_override = SubResource("Mat_gun_vm")
+cast_shadow = 0
+
+[node name="VMMag" type="MeshInstance3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
+position = Vector3(0, -0.15, -0.02)
+mesh = SubResource("Mesh_vm_mag")
+material_override = SubResource("Mat_gun_dark")
+cast_shadow = 0
+
+[node name="VMGrip" type="MeshInstance3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
+position = Vector3(0, -0.12, 0.15)
+rotation = Vector3(0.3, 0, 0)
+mesh = SubResource("Mesh_vm_grip")
+material_override = SubResource("Mat_gun_vm")
+cast_shadow = 0
+
+[node name="VMStock" type="MeshInstance3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
+position = Vector3(0, -0.03, 0.3)
+mesh = SubResource("Mesh_vm_stock")
+material_override = SubResource("Mat_gun_dark")
+cast_shadow = 0
+
+[node name="VMHandR" type="MeshInstance3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
+position = Vector3(0.015, -0.17, 0.17)
+mesh = SubResource("Mesh_vm_hand_r")
+material_override = SubResource("Mat_glove_vm")
+cast_shadow = 0
+
+[node name="VMHandL" type="MeshInstance3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
+position = Vector3(0.015, -0.1, -0.32)
+mesh = SubResource("Mesh_vm_hand_l")
+material_override = SubResource("Mat_glove_vm")
+cast_shadow = 0
 
 [node name="Model" type="Node3D" parent="."]
 script = ExtResource("2_model")
@@ -137,6 +241,33 @@ material_override = SubResource("Mat_vest")
 position = Vector3(0.13, -0.14, -0.305)
 mesh = SubResource("Mesh_pouch")
 material_override = SubResource("Mat_vest")
+
+[node name="WeaponPivot" type="Node3D" parent="Model/BodyPivot"]
+position = Vector3(0.12, 0.02, -0.42)
+
+[node name="RifleBody" type="MeshInstance3D" parent="Model/BodyPivot/WeaponPivot"]
+mesh = SubResource("Mesh_r_body")
+material_override = SubResource("Mat_gun")
+
+[node name="RifleBarrel" type="MeshInstance3D" parent="Model/BodyPivot/WeaponPivot"]
+position = Vector3(0, 0.008, -0.5)
+mesh = SubResource("Mesh_r_barrel")
+material_override = SubResource("Mat_gun")
+
+[node name="RifleMag" type="MeshInstance3D" parent="Model/BodyPivot/WeaponPivot"]
+position = Vector3(0, -0.12, -0.02)
+mesh = SubResource("Mesh_r_mag")
+material_override = SubResource("Mat_gun_dark")
+
+[node name="RifleGrip" type="MeshInstance3D" parent="Model/BodyPivot/WeaponPivot"]
+position = Vector3(0, -0.1, 0.14)
+mesh = SubResource("Mesh_r_grip")
+material_override = SubResource("Mat_gun_dark")
+
+[node name="RifleStock" type="MeshInstance3D" parent="Model/BodyPivot/WeaponPivot"]
+position = Vector3(0, -0.02, 0.42)
+mesh = SubResource("Mesh_r_stock")
+material_override = SubResource("Mat_gun_dark")
 
 [node name="NeckMesh" type="MeshInstance3D" parent="Model"]
 position = Vector3(0, 1.43, 0)
