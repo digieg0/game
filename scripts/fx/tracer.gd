@@ -2,8 +2,8 @@ extends Node3D
 ## Трассер пули: тонкий светящийся цилиндр от стрелявшего к точке попадания.
 ## Спавнится сервером при любом выстреле (попадание или промах).
 
-const LIFETIME: float = 0.09
-const WIDTH: float = 0.012
+const LIFETIME: float = 0.12
+const WIDTH: float = 0.02
 
 var from: Vector3
 var to: Vector3
@@ -26,7 +26,7 @@ func _ready() -> void:
 	material.albedo_color = Color(1.0, 0.82, 0.45, 1.0)
 	material.emission_enabled = true
 	material.emission = Color(1.0, 0.72, 0.3, 1.0)
-	material.emission_energy_multiplier = 1.6
+	material.emission_energy_multiplier = 2.5
 	mesh_instance.mesh = beam
 	mesh_instance.material_override = material
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

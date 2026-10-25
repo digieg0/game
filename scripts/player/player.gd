@@ -316,6 +316,29 @@ func _fire_once() -> void:
 			yaw = float(shot_angles.get("yaw", aim_yaw))
 			pitch = float(shot_angles.get("pitch", aim_pitch))
 	NetManager.request_fire(yaw, pitch)
+	_local_tracer(yaw, pitch)
+
+## Мгновенный ЛОКАЛЬНЫЙ трассер: рисуем его сами на клиенте, не дожидаясь RPC
+## от сервера. Серверный трассер рисуется только для ДРУГИХ игроков.
+func _local_tracer(yaw: float, pitch: float) -> void:
+	var origin: Vector3 = global_position + Vector3(0.0, 1.6, 0.0)
+	var cos_pitch := cos(pitch)
+	var direction := Vector3(-sin(yaw) * cos_pitch, sin(pitch), -cos(yaw) * cos_pitch).normalized()
+	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * NetManager.MAX_RANGE)
+	query.collision_mask = 5
+	query.collide_with_areas = true
+	query.collide_with_bodies = true
+	var excluded: Array[RID] = []
+	var model: Node = get_node_or_null("Model")
+	if model:
+		for hitbox in model.find_children("*", "Area3D", true, false):
+			excluded.append(hitbox.get_rid())
+	query.exclude = excluded
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	var end_point: Vector3 = origin + direction * NetManager.MAX_RANGE
+	if not hit.is_empty():
+		end_point = hit["position"]
+	NetManager.spawn_local_tracer(origin, end_point)
 
 func get_visible_yaw() -> float:
 	if is_local:

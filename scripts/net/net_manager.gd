@@ -443,8 +443,23 @@ func receive_hit(shooter_id: int, victim_id: int, zone: String, damage: float, k
 ## Трассер рисуется у всех, включая хоста (call_local).
 @rpc("authority", "call_local", "unreliable")
 func receive_tracer(from_pos: Vector3, to_pos: Vector3) -> void:
+	_spawn_tracer_node(from_pos, to_pos)
+
+## Трассер, который клиент рисует СРАЗУ при своем выстреле (локальный предикт —
+## без сетевой задержки и без зависимости от серверного RPC).
+func spawn_local_tracer(from_pos: Vector3, to_pos: Vector3) -> void:
+	_spawn_tracer_node(from_pos, to_pos)
+
+func _spawn_tracer_node(from_pos: Vector3, to_pos: Vector3) -> void:
 	var tree_root: Viewport = get_tree().root
-	if tree_root == null or tree_root.current_scene == null:
+	if tree_root == null:
+		push_warning("[Tracer] нет get_tree().root — трассер не создан")
+		return
+	if tree_root.current_scene == null:
+		push_warning("[Tracer] current_scene == null — трассер не создан")
+		return
+	if tracer_script == null:
+		push_error("[Tracer] tracer_script не загрузился (preload) — трассер не создан")
 		return
 	var tracer: Node3D = tracer_script.new()
 	tracer.from = from_pos
