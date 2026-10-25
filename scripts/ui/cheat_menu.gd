@@ -243,7 +243,9 @@ func _add_movement_slider(parent: VBoxContainer, params: MovementParams, key: St
     slider.min_value = min_value
     slider.max_value = max_value
     slider.step = 0.1 if max_value - min_value <= 40.0 else 1.0
-    var value := float(params.get(key, min_value))
+    # get() у MovementParams/Object принимает только 1 аргумент (2-й дефолт — только у Dictionary).
+    var raw: Variant = params.get(key)
+    var value := float(raw) if raw != null else min_value
     slider.value = clampf(value, min_value, max_value)
     slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     var readout := Label.new()
