@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/arena.gd" id="1_arena"]
 
@@ -13,6 +13,10 @@ roughness = 0.72
 [sub_resource type="StandardMaterial3D" id="Mat_cover"]
 albedo_color = Color(0.2, 0.3, 0.38, 1)
 roughness = 0.62
+
+[sub_resource type="StandardMaterial3D" id="Mat_crate"]
+albedo_color = Color(0.42, 0.33, 0.2, 1)
+roughness = 0.85
 
 [sub_resource type="StandardMaterial3D" id="Mat_accent"]
 albedo_color = Color(0.05, 0.48, 0.66, 1)
@@ -41,111 +45,341 @@ adjustment_contrast = 1.08
 adjustment_saturation = 0.9
 fog_enabled = true
 fog_light_color = Color(0.14, 0.2, 0.29, 1)
-fog_density = 0.002
+fog_density = 0.001
+
+[sub_resource type="BoxMesh" id="Mesh_mid_ground_strip"]
+size = Vector3(96, 0.02, 3)
 
 [node name="Arena" type="Node3D"]
 script = ExtResource("1_arena")
 
 [node name="Ground" type="CSGBox3D" parent="."]
 position = Vector3(0, -0.5, 0)
-size = Vector3(40, 1, 40)
+size = Vector3(96, 1, 96)
 material = SubResource("Mat_ground")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
 
+[node name="CenterStripeX" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.02, 0)
+mesh = SubResource("Mesh_mid_ground_strip")
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0.02, 0)
+
+[node name="CenterStripeZ" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.02, 0)
+mesh = SubResource("Mesh_mid_ground_strip")
+
 [node name="WallN" type="CSGBox3D" parent="."]
-position = Vector3(0, 2, -20)
-size = Vector3(40, 4, 1)
+position = Vector3(0, 3, -48)
+size = Vector3(96, 6, 2)
 material = SubResource("Mat_wall")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
 
 [node name="WallS" type="CSGBox3D" parent="."]
-position = Vector3(0, 2, 20)
-size = Vector3(40, 4, 1)
+position = Vector3(0, 3, 48)
+size = Vector3(96, 6, 2)
 material = SubResource("Mat_wall")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
 
 [node name="WallE" type="CSGBox3D" parent="."]
-position = Vector3(20, 2, 0)
-size = Vector3(1, 4, 40)
+position = Vector3(48, 3, 0)
+size = Vector3(2, 6, 96)
 material = SubResource("Mat_wall")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
 
 [node name="WallW" type="CSGBox3D" parent="."]
-position = Vector3(-20, 2, 0)
-size = Vector3(1, 4, 40)
+position = Vector3(-48, 3, 0)
+size = Vector3(2, 6, 96)
 material = SubResource("Mat_wall")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
 
-[node name="NorthEastCover" type="CSGBox3D" parent="."]
-position = Vector3(7, 1, -8)
-size = Vector3(5, 2, 1.1)
-material = SubResource("Mat_cover")
-use_collision = true
-collision_layer = 1
-collision_mask = 3
-
-[node name="SouthWestCover" type="CSGBox3D" parent="."]
-position = Vector3(-7, 1, 8)
-size = Vector3(5, 2, 1.1)
-material = SubResource("Mat_cover")
-use_collision = true
-collision_layer = 1
-collision_mask = 3
-
-[node name="WestLaneCover" type="CSGBox3D" parent="."]
-position = Vector3(-8, 1, -1)
-size = Vector3(1.1, 2, 7)
-material = SubResource("Mat_cover")
-use_collision = true
-collision_layer = 1
-collision_mask = 3
-
-[node name="EastLaneCover" type="CSGBox3D" parent="."]
-position = Vector3(8, 1, 1)
-size = Vector3(1.1, 2, 7)
-material = SubResource("Mat_cover")
-use_collision = true
-collision_layer = 1
-collision_mask = 3
-
-[node name="CenterBlockA" type="CSGBox3D" parent="."]
-position = Vector3(-3.2, 0.85, -2.3)
-size = Vector3(2.2, 1.7, 2.2)
+[node name="CenterTower" type="CSGBox3D" parent="."]
+position = Vector3(0, 1.9, 0)
+size = Vector3(6, 3.8, 6)
 material = SubResource("Mat_accent")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
 
-[node name="CenterBlockB" type="CSGBox3D" parent="."]
-position = Vector3(3.2, 0.85, 2.3)
-size = Vector3(2.2, 1.7, 2.2)
+[node name="CenterRampN" type="CSGBox3D" parent="."]
+position = Vector3(0, 1.0, -5.4)
+rotation = Vector3(-0.4, 0, 0)
+size = Vector3(5, 0.4, 3.2)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="CenterRampS" type="CSGBox3D" parent="."]
+position = Vector3(0, 1.0, 5.4)
+rotation = Vector3(0.4, 0, 0)
+size = Vector3(5, 0.4, 3.2)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="MidWallN" type="CSGBox3D" parent="."]
+position = Vector3(0, 1.7, -16)
+size = Vector3(14, 3.4, 1.2)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="MidWallS" type="CSGBox3D" parent="."]
+position = Vector3(0, 1.7, 16)
+size = Vector3(14, 3.4, 1.2)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="MidWallW" type="CSGBox3D" parent="."]
+position = Vector3(-16, 1.7, 0)
+size = Vector3(1.2, 3.4, 14)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="MidWallE" type="CSGBox3D" parent="."]
+position = Vector3(16, 1.7, 0)
+size = Vector3(1.2, 3.4, 14)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NEHallWall" type="CSGBox3D" parent="."]
+position = Vector3(26, 1.75, -24)
+size = Vector3(22, 3.5, 1.2)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NESideWall" type="CSGBox3D" parent="."]
+position = Vector3(36, 1.75, -14)
+size = Vector3(1.2, 3.5, 14)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NECrateA" type="CSGBox3D" parent="."]
+position = Vector3(30, 0.75, -33)
+size = Vector3(3, 1.5, 3)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NECrateA2" type="CSGBox3D" parent="."]
+position = Vector3(30, 2.05, -33)
+size = Vector3(2.2, 1.1, 2.2)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NECrateB" type="CSGBox3D" parent="."]
+position = Vector3(14, 0.9, -36)
+size = Vector3(2.5, 1.8, 2.5)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NELowCover" type="CSGBox3D" parent="."]
+position = Vector3(18, 0.6, -6)
+size = Vector3(10, 1.2, 1.0)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NEPillarWall" type="CSGBox3D" parent="."]
+position = Vector3(6, 2.0, -30)
+size = Vector3(1.4, 4.0, 10)
+material = SubResource("Mat_wall")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SWHallWall" type="CSGBox3D" parent="."]
+position = Vector3(-26, 1.75, 24)
+size = Vector3(22, 3.5, 1.2)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SWSideWall" type="CSGBox3D" parent="."]
+position = Vector3(-36, 1.75, 14)
+size = Vector3(1.2, 3.5, 14)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SWCrateA" type="CSGBox3D" parent="."]
+position = Vector3(-30, 0.75, 33)
+size = Vector3(3, 1.5, 3)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SWCrateA2" type="CSGBox3D" parent="."]
+position = Vector3(-30, 2.05, 33)
+size = Vector3(2.2, 1.1, 2.2)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SWCrateB" type="CSGBox3D" parent="."]
+position = Vector3(-14, 0.9, 36)
+size = Vector3(2.5, 1.8, 2.5)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SWLowCover" type="CSGBox3D" parent="."]
+position = Vector3(-18, 0.6, 6)
+size = Vector3(10, 1.2, 1.0)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SWPillarWall" type="CSGBox3D" parent="."]
+position = Vector3(-6, 2.0, 30)
+size = Vector3(1.4, 4.0, 10)
+material = SubResource("Mat_wall")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NWHallWall" type="CSGBox3D" parent="."]
+position = Vector3(-24, 1.75, -26)
+size = Vector3(1.2, 3.5, 22)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NWSideWall" type="CSGBox3D" parent="."]
+position = Vector3(-14, 1.75, -36)
+size = Vector3(14, 3.5, 1.2)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NWCrateRack" type="CSGBox3D" parent="."]
+position = Vector3(-33, 0.75, -30)
+size = Vector3(3, 1.5, 7)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NWLowCover" type="CSGBox3D" parent="."]
+position = Vector3(-6, 0.6, -18)
+size = Vector3(1.0, 1.2, 10)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="NWCrate" type="CSGBox3D" parent="."]
+position = Vector3(-14, 0.9, -14)
+size = Vector3(2.5, 1.8, 2.5)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SENHallWall" type="CSGBox3D" parent="."]
+position = Vector3(24, 1.75, 26)
+size = Vector3(1.2, 3.5, 22)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SESideWall" type="CSGBox3D" parent="."]
+position = Vector3(14, 1.75, 36)
+size = Vector3(14, 3.5, 1.2)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SECrateRack" type="CSGBox3D" parent="."]
+position = Vector3(33, 0.75, 30)
+size = Vector3(3, 1.5, 7)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SELowCover" type="CSGBox3D" parent="."]
+position = Vector3(6, 0.6, 18)
+size = Vector3(1.0, 1.2, 10)
+material = SubResource("Mat_cover")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="SECrate" type="CSGBox3D" parent="."]
+position = Vector3(14, 0.9, 14)
+size = Vector3(2.5, 1.8, 2.5)
+material = SubResource("Mat_crate")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="CornerPillarNW" type="CSGBox3D" parent="."]
+position = Vector3(-43, 2.25, -43)
+size = Vector3(4, 4.5, 4)
 material = SubResource("Mat_accent")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
 
-[node name="CoverNorth" type="CSGBox3D" parent="."]
-position = Vector3(-1.0, 0.8, -10.5)
-size = Vector3(5.5, 1.6, 1.0)
-material = SubResource("Mat_cover")
+[node name="CornerPillarNE" type="CSGBox3D" parent="."]
+position = Vector3(43, 2.25, -43)
+size = Vector3(4, 4.5, 4)
+material = SubResource("Mat_accent")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
 
-[node name="CoverSouth" type="CSGBox3D" parent="."]
-position = Vector3(1.0, 0.8, 10.5)
-size = Vector3(5.5, 1.6, 1.0)
-material = SubResource("Mat_cover")
+[node name="CornerPillarSW" type="CSGBox3D" parent="."]
+position = Vector3(-43, 2.25, 43)
+size = Vector3(4, 4.5, 4)
+material = SubResource("Mat_accent")
+use_collision = true
+collision_layer = 1
+collision_mask = 3
+
+[node name="CornerPillarSE" type="CSGBox3D" parent="."]
+position = Vector3(43, 2.25, 43)
+size = Vector3(4, 4.5, 4)
+material = SubResource("Mat_accent")
 use_collision = true
 collision_layer = 1
 collision_mask = 3
@@ -153,22 +387,28 @@ collision_mask = 3
 [node name="Spawns" type="Node3D" parent="."]
 
 [node name="Spawn0" type="Marker3D" parent="Spawns"]
-position = Vector3(-12, 0, -12)
+position = Vector3(-40, 0, -40)
 
 [node name="Spawn1" type="Marker3D" parent="Spawns"]
-position = Vector3(12, 0, 12)
+position = Vector3(40, 0, 40)
 
 [node name="Spawn2" type="Marker3D" parent="Spawns"]
-position = Vector3(-12, 0, 12)
+position = Vector3(-40, 0, 40)
 
 [node name="Spawn3" type="Marker3D" parent="Spawns"]
-position = Vector3(12, 0, -12)
+position = Vector3(40, 0, -40)
 
 [node name="Spawn4" type="Marker3D" parent="Spawns"]
-position = Vector3(0, 0, -15)
+position = Vector3(-40, 0, 0)
 
 [node name="Spawn5" type="Marker3D" parent="Spawns"]
-position = Vector3(0, 0, 15)
+position = Vector3(40, 0, 0)
+
+[node name="Spawn6" type="Marker3D" parent="Spawns"]
+position = Vector3(0, 0, -40)
+
+[node name="Spawn7" type="Marker3D" parent="Spawns"]
+position = Vector3(0, 0, 40)
 
 [node name="Lighting" type="Node3D" parent="."]
 
@@ -177,6 +417,7 @@ rotation = Vector3(-0.82, -0.52, 0)
 light_color = Color(0.69, 0.82, 1, 1)
 light_energy = 1.35
 shadow_enabled = true
+directional_shadow_max_distance = 120.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="Lighting"]
 environment = SubResource("Environment")

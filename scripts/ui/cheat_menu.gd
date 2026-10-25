@@ -171,6 +171,7 @@ func _description_for(cheat_id: String) -> String:
     match cheat_id:
         "aimbot": return "Selects a visible target within the field of view."
         "triggerbot": return "Fires when the crosshair intersects an enemy."
+        "ragebot": return "Snaps at the visible target and fires INSTANTLY on target acquisition. Sets shot chance."
         "anti_aim": return "Changes the pose shown to other players."
         "spinbot": return "Rotates your displayed model."
         "esp": return "Shows enemy outlines and status information."
@@ -267,9 +268,11 @@ func _add_setting_row(parent: VBoxContainer, cheat: Cheat, key: String) -> void:
 
 func _numeric_bounds(cheat_id: String, key: String, current: float) -> Vector2:
     match key:
-        "fov": return Vector2(5.0, 120.0)
+        "fov": return Vector2(5.0, 180.0)
         "smooth": return Vector2(1.0, 20.0)
         "delay": return Vector2(0.0, 0.5)
+        "chance", "first_shot_chance": return Vector2(0.0, 100.0)
+        "retry_delay": return Vector2(0.01, 1.0)
         "speed": return Vector2(30.0, 1800.0)
         "jitter_speed": return Vector2(1.0, 30.0)
         "limit": return Vector2(0.0, 12.0)

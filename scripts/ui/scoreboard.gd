@@ -5,6 +5,7 @@ var _backdrop: ColorRect
 var _panel: PanelContainer
 var _rows: VBoxContainer
 var _shown: bool = false
+var _refresh_accumulator: float = 0.0
 
 func _ready() -> void:
     layer = 7
@@ -57,6 +58,7 @@ func _ready() -> void:
     _add_header(header, "K", false, 44)
     _add_header(header, "D", false, 44)
     _add_header(header, "K/D", false, 64)
+    _add_header(header, "PING", false, 64)
     root.add_child(header)
     _rows = VBoxContainer.new()
     _rows.add_theme_constant_override("separation", 5)
@@ -74,13 +76,19 @@ func _ready() -> void:
         gs.score_changed.connect(_refresh)
     _refresh()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
     var requested := Input.is_action_pressed("scoreboard")
     if requested != _shown:
         _shown = requested
         _backdrop.visible = _shown
         _panel.visible = _shown
         if _shown:
+            _refresh()
+    if _shown:
+        # Пинг обновляется каждые ~0.5 сек, пока таблица открыта.
+        _refresh_accumulator += delta
+        if _refresh_accumulator >= 0.5:
+            _refresh_accumulator = 0.0
             _refresh()
 
 func _add_header(parent: HBoxContainer, text: String, expand: bool, width: float = 0.0) -> void:
@@ -114,6 +122,18 @@ func _refresh() -> void:
         _add_score_cell(row, int(record["deaths"]), Color(1.0, 0.52, 0.48, 1.0))
         var deaths: int = maxi(1, int(record["deaths"]))
         _add_score_cell(row, snappedf(float(record["kills"]) / float(deaths), 0.01), Color(0.64, 0.8, 1.0, 1.0), 64)
+        var ping: int = int(NetManager.pings.get(int(record["id"]), 0))
+        # Пинг хоста уже пересчитан сервером как средний среди всех игроков.
+        var ping_color := Color(0.4, 0.62, 0.8, 1.0)
+        if int(record["id"]) == 1:
+            ping_color = Color(0.2, 0.82, 1.0, 1.0)
+        elif ping > 150:
+            ping_color = Color(1.0, 0.52, 0.48, 1.0)
+        elif ping > 70:
+            ping_color = Color(1.0, 0.82, 0.4, 1.0)
+        else:
+            ping_color = Color(0.25, 0.94, 0.68, 1.0)
+        _add_score_cell(row, "%dms" % ping, ping_color, 64)
         _rows.add_child(row)
 
 func _add_score_cell(parent: HBoxContainer, value: Variant, color: Color, width: float = 44.0) -> void:

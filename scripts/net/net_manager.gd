@@ -8,6 +8,7 @@ signal player_list_changed
 signal match_state_received
 signal hit_confirmed
 signal respawn_received(id, pos)
+signal pings_updated
 
 const DEFAULT_PORT: int = 27015
 const MAX_PLAYERS: int = 8
@@ -15,6 +16,7 @@ const SNAPSHOT_RATE: float = 60.0
 const MAX_INPUT_BATCH: int = 24
 const MAX_INPUT_BUFFER: int = 96
 const SERVER_FIRE_INTERVAL: float = 0.12
+const PING_INTERVAL: float = 1.0
 const BASE_DAMAGE: float = 25.0
 const MAX_RANGE: float = 200.0
 const MAX_BACKTRACK_MS: float = 200.0
@@ -26,6 +28,9 @@ var local_player_name: String = "Player"
 
 ## peer id -> {name, kills, deaths, alive, hp}
 var players: Dictionary = {}
+## peer id -> отображаемый пинг в мс. У хоста — средний пинг всех игроков.
+var pings: Dictionary = {}
+var _ping_accumulator: float = 0.0
 var snapshots = preload("res://scripts/net/snapshot_buffer.gd").new()
 var latest_snapshot: Dictionary = {}
 var last_snapshot_time: float = 0.0
@@ -41,13 +46,56 @@ func _ready() -> void:
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 
-func _physics_process(_delta: float) -> void:
-	if not multiplayer.is_server() or _fire_queue.is_empty():
-		return
-	var pending: Array[Dictionary] = _fire_queue.duplicate()
-	_fire_queue.clear()
-	for shot in pending:
-		_server_fire(int(shot["shooter_id"]), float(shot["yaw"]), float(shot["pitch"]), float(shot["rewind_ms"]))
+func _physics_process(delta: float) -> void:
+	if multiplayer.is_server():
+		if not _fire_queue.is_empty():
+			var pending: Array[Dictionary] = _fire_queue.duplicate()
+			_fire_queue.clear()
+			for shot in pending:
+				_server_fire(int(shot["shooter_id"]), float(shot["yaw"]), float(shot["pitch"]), float(shot["rewind_ms"]))
+		_ping_accumulator += delta
+		if _ping_accumulator >= PING_INTERVAL:
+			_ping_accumulator = 0.0
+			_broadcast_pings()
+	else:
+		_ping_accumulator += delta
+
+## ENet меряет RTT сам: у клиентов — до сервера, у сервера — до каждого клиента.
+func _get_peer_rtt(peer_id: int) -> int:
+	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if enet == null or not multiplayer.get_peers().has(peer_id):
+		return 0
+	return int(enet.get_peer(peer_id).get_round_trip_time())
+
+## Пинг хоста — средний среди всех подключённых игроков, чтобы не было «нечестного» 0.
+func _build_ping_table() -> Dictionary:
+	var table: Dictionary = {}
+	var total: float = 0.0
+	var count: int = 0
+	for pid in multiplayer.get_peers():
+		var rtt: int = _get_peer_rtt(pid)
+		table[int(pid)] = rtt
+		total += float(rtt)
+		count += 1
+	var average: int = int(round(total / float(count))) if count > 0 else 0
+	var display: Dictionary = {}
+	for id in players:
+		var player_id := int(id)
+		if player_id == 1:
+			display[player_id] = average
+		else:
+			display[player_id] = int(table.get(player_id, 0))
+	return display
+
+func _broadcast_pings() -> void:
+	pings = _build_ping_table()
+	pings_updated.emit()
+	rpc("receive_pings", pings.duplicate(true))
+
+@rpc("authority", "call_remote", "unreliable")
+func receive_pings(data: Dictionary) -> void:
+	pings = data
+	pings_updated.emit()
 
 func host_game(player_name: String, port: int = DEFAULT_PORT) -> Error:
 	close_connection()
@@ -89,6 +137,7 @@ func close_connection() -> void:
 	multiplayer.multiplayer_peer = null
 	is_host = false
 	players.clear()
+	pings.clear()
 	server_players.clear()
 	_input_buffer.clear()
 	_fire_queue.clear()
@@ -120,6 +169,7 @@ func _on_peer_connected(id: int) -> void:
 		return
 	_register_player(id, "Player%d" % id)
 	rpc("sync_players", players)
+	_broadcast_pings()
 
 func _on_peer_disconnected(id: int) -> void:
 	if not multiplayer.is_server():
@@ -130,6 +180,7 @@ func _on_peer_disconnected(id: int) -> void:
 	GameState.remove_player(id)
 	player_list_changed.emit()
 	rpc("sync_players", players)
+	_broadcast_pings()
 
 func _on_connected_to_server() -> void:
 	rpc_id(1, "register_player", local_player_name)

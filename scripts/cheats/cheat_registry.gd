@@ -13,6 +13,7 @@ var CHEAT_PATHS: Array[String] = [
 	"res://scripts/cheats/bhop_assist.gd",
 	"res://scripts/cheats/esp.gd",
 	"res://scripts/cheats/fake_lag.gd",
+	"res://scripts/cheats/ragebot.gd",
 	"res://scripts/cheats/resolver.gd",
 	"res://scripts/cheats/spinbot.gd",
 	"res://scripts/cheats/triggerbot.gd",

@@ -53,4 +53,11 @@ func _draw() -> void:
     if local_player != null:
         var view_label: String = "VIEW: THIRD PERSON" if bool(local_player.get("is_third_person")) else "VIEW: FIRST PERSON"
         draw_string(ThemeDB.fallback_font, Vector2(size.x - 24.0, 54.0), view_label, HORIZONTAL_ALIGNMENT_RIGHT, -1.0, 12, Color(0.18, 0.82, 1.0, 0.95))
+        # Пинг хоста уже пересчитан сервером как средний среди всех игроков.
+        var own_ping: int = 0
+        for id in NetManager.pings:
+            if int(id) == NetManager.get_local_id():
+                own_ping = int(NetManager.pings[id])
+                break
+        draw_string(ThemeDB.fallback_font, Vector2(size.x - 24.0, 74.0), "PING %dMS" % own_ping, HORIZONTAL_ALIGNMENT_RIGHT, -1.0, 12, Color(0.55, 0.65, 0.76, 0.95))
     draw_string(ThemeDB.fallback_font, Vector2(28.0, 34.0), "WASD MOVE   SPACE JUMP   LMB FIRE   V VIEW   INS SETTINGS", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, Color(0.55, 0.65, 0.76, 0.9))
