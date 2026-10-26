@@ -186,6 +186,9 @@ mesh = SubResource("Mesh_vm_barrel")
 material_override = SubResource("Mat_gun_vm")
 cast_shadow = 0
 
+[node name="VMMuzzle" type="Marker3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
+position = Vector3(0, 0.012, -0.49)
+
 [node name="VMMag" type="MeshInstance3D" parent="CameraPivot/SpringArm3D/Camera3D/VMRoot"]
 position = Vector3(0, -0.15, -0.02)
 mesh = SubResource("Mesh_vm_mag")
@@ -253,6 +256,9 @@ material_override = SubResource("Mat_gun")
 position = Vector3(0, 0.008, -0.5)
 mesh = SubResource("Mesh_r_barrel")
 material_override = SubResource("Mat_gun")
+
+[node name="ModelMuzzle" type="Marker3D" parent="Model/BodyPivot/WeaponPivot"]
+position = Vector3(0, 0.008, -0.7)
 
 [node name="RifleMag" type="MeshInstance3D" parent="Model/BodyPivot/WeaponPivot"]
 position = Vector3(0, -0.12, -0.02)

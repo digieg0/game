@@ -52,6 +52,8 @@ var _last_server_tick: int = -1
 @onready var model: Node3D = $Model
 @onready var viewmodel: Node3D = $CameraPivot/SpringArm3D/Camera3D/VMRoot
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
+@onready var vm_muzzle: Node3D = $CameraPivot/SpringArm3D/Camera3D/VMRoot/VMMuzzle
+@onready var model_muzzle: Node3D = $Model/BodyPivot/WeaponPivot/ModelMuzzle
 var _capsule: CapsuleShape3D
 
 func _ready() -> void:
@@ -338,7 +340,20 @@ func _local_tracer(yaw: float, pitch: float) -> void:
 	var end_point: Vector3 = origin + direction * NetManager.MAX_RANGE
 	if not hit.is_empty():
 		end_point = hit["position"]
-	NetManager.spawn_local_tracer(origin, end_point)
+	# Луч света идёт ИЗ ДУЛА винтовки до точки попадания (рейкаст — от глаз,
+	# иначе прицел и трассер разойдутся).
+	NetManager.spawn_local_tracer(get_muzzle_global(), end_point)
+
+## Позиция дула в мировых координатах: у локального игрока — кончик вьюмодели,
+## у остальных — кончик винтовки модели. Fallback — голова (+1.6м).
+func get_muzzle_global() -> Vector3:
+	if is_local and is_third_person:
+		return model_muzzle.global_position if model_muzzle != null else global_position + Vector3(0.0, 1.6, 0.0)
+	if is_local and vm_muzzle != null:
+		return vm_muzzle.global_position
+	if model_muzzle != null:
+		return model_muzzle.global_position
+	return global_position + Vector3(0.0, 1.6, 0.0)
 
 func get_visible_yaw() -> float:
 	if is_local:

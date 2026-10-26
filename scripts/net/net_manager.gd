@@ -362,12 +362,16 @@ func _server_fire(shooter_id: int, yaw: float, pitch: float, rewind_ms: float = 
 		damage_multiplier = current_multiplier
 
 	# Трассер уходит всем (и хосту) при ЛЮБОМ выстреле: промах или попадание.
+	# Стартует из ДУЛА винтовки стрелявшего, а не из головы.
 	var end_point: Vector3 = origin + direction * MAX_RANGE
 	if not historical_hit.is_empty():
 		end_point = origin + direction * minf(float(historical_hit["distance"]), blocker_distance)
 	elif not current_hit.is_empty():
 		end_point = current_hit["position"]
-	_emit_tracer(origin, end_point)
+	var tracer_from: Vector3 = origin
+	if shooter.has_method("get_muzzle_global"):
+		tracer_from = shooter.get_muzzle_global()
+	_emit_tracer(tracer_from, end_point)
 
 	if victim == null or victim == shooter or not victim.alive or zone.is_empty():
 		return
