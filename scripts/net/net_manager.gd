@@ -451,11 +451,12 @@ func spawn_local_tracer(from_pos: Vector3, to_pos: Vector3) -> void:
 	_spawn_tracer_node(from_pos, to_pos)
 
 func _spawn_tracer_node(from_pos: Vector3, to_pos: Vector3) -> void:
-	var tree_root: Viewport = get_tree().root
-	if tree_root == null:
-		push_warning("[Tracer] нет get_tree().root — трассер не создан")
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		push_warning("[Tracer] нет SceneTree — трассер не создан")
 		return
-	if tree_root.current_scene == null:
+	var scene: Node = tree.current_scene
+	if scene == null:
 		push_warning("[Tracer] current_scene == null — трассер не создан")
 		return
 	if tracer_script == null:
@@ -465,7 +466,7 @@ func _spawn_tracer_node(from_pos: Vector3, to_pos: Vector3) -> void:
 	tracer.from = from_pos
 	tracer.to = to_pos
 	tracer.name = "Tracer"
-	tree_root.current_scene.add_child(tracer)
+	scene.add_child(tracer)
 
 func _emit_tracer(from_pos: Vector3, to_pos: Vector3) -> void:
 	if from_pos.distance_squared_to(to_pos) < TRACER_MIN_DISTANCE_SQ:
